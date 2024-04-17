@@ -1,8 +1,22 @@
 const model = require("../models/event");
 const flash = require('connect-flash');
+const multer = require("multer");
 
 //const luxon = require('luxon');
 
+// const storage = multer.diskStorage({
+//   destination: function (req, file, cb) {
+//     cb(null, "public/uploads");
+//   },
+//   filename: function (req, file, cb) {
+//     cb(null, file.fieldname + "-" + Date.now());
+//   },
+// });
+
+// const upload = multer({
+//   storage: storage,
+//   limits: { fileSize: 10 * 1024 * 1024 },
+// });
 
 //GET /events: send all the events
 exports.index = (req, res, next) => {
@@ -28,6 +42,7 @@ exports.new = (req, res) => {
 exports.create = (req, res, next) => {
   let event = new model(req.body);
   event.author = req.session.user;
+
   event.image = req.file ? "/uploads/" + req.file.filename : "";
   if (event) {
     console.log("working");
@@ -122,6 +137,7 @@ exports.update = (req, res, next) => {
     .then((event) => {
       if (event) {
         //event.startTime = luxonDateTime;
+        //event.image = event.image;
         req.flash('success', 'Event updated successfully');
         return res.redirect("/events/" + id);
       }

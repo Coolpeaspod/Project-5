@@ -4,11 +4,11 @@ const Event = require("../models/event"); // Import the Event model
 const multer = require("multer");
 const mongoose = require("mongoose");
 const { isLoggedIn, isAuthor } = require("../middlewares/auth");
-const { validateId } = require("../middlewares/validator");
+const { validateId, validateEvent, validateResult } = require("../middlewares/validator");
 
 const router = express.Router();
 
-// configure multer
+//configure multer
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
     cb(null, "public/uploads");
@@ -30,7 +30,8 @@ router.get("/", controller.index);
 router.get("/new", isLoggedIn, controller.new);
 
 //POST /events
-router.post('/', isLoggedIn, upload.single('image'), controller.create);
+router.post('/', isLoggedIn, upload.single('image'), validateEvent, validateResult, controller.create);
+//router.post('/', isLoggedIn, validateEvent, validateResult, controller.create);
 
 // POST /events
 // router.post("/", isLoggedIn, upload.single("image"), async (req, res, next) => {
@@ -70,7 +71,7 @@ router.get("/:id", validateId, controller.show);
 router.get("/:id/edit", validateId, isLoggedIn, isAuthor, controller.edit);
 
 //PUT /events/:id
-router.put('/:id', validateId, isLoggedIn, isAuthor, controller.update);
+router.put('/:id', validateId, isLoggedIn, isAuthor, validateEvent, validateResult, controller.update);
 
 // PUT /events/:id
 // router.put("/:id", validateId, isLoggedIn, isAuthor, upload.single("image"), async (req, res, next) => {
