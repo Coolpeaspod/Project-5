@@ -47,3 +47,24 @@ exports.isAuthor = (req, res, next) => {
     })
     .catch((err) => next(err));
 };
+
+exports.isNotHost = (req, res, next) => {
+  let id = req.params.id;
+  Event.findById(id)
+    .then((event) => {
+      if (event) {
+        if (event.author != req.session.user) {
+          return next();
+        } else {
+          let err = new Error("Unauthorized to access the resource");
+          err.status = 401;
+          return next(err);
+        }
+      } else {
+        let err = new Error("event cannot be found");
+        err.status = 404;
+        return next(err);
+      }
+    })
+    .catch((err) => next(err));
+};
