@@ -3,8 +3,13 @@ const controller = require("../controllers/eventController");
 const Event = require("../models/event"); // Import the Event model
 const multer = require("multer");
 const mongoose = require("mongoose");
-const { isLoggedIn, isAuthor } = require("../middlewares/auth");
-const { validateId, validateEvent, validateResult } = require("../middlewares/validator");
+const { isLoggedIn, isAuthor, isNotHost } = require("../middlewares/auth");
+const {
+  validateId,
+  validateEvent,
+  validateResult,
+} = require("../middlewares/validator");
+const rsvp = require("../models/rsvp");
 
 const router = express.Router();
 
@@ -30,7 +35,14 @@ router.get("/", controller.index);
 router.get("/new", isLoggedIn, controller.new);
 
 //POST /events
-router.post('/', isLoggedIn, upload.single('image'), validateEvent, validateResult, controller.create);
+router.post(
+  "/",
+  isLoggedIn,
+  upload.single("image"),
+  validateEvent,
+  validateResult,
+  controller.create
+);
 //router.post('/', isLoggedIn, validateEvent, validateResult, controller.create);
 
 // POST /events
@@ -71,7 +83,15 @@ router.get("/:id", validateId, controller.show);
 router.get("/:id/edit", validateId, isLoggedIn, isAuthor, controller.edit);
 
 //PUT /events/:id
-router.put('/:id', validateId, isLoggedIn, isAuthor, validateEvent, validateResult, controller.update);
+router.put(
+  "/:id",
+  validateId,
+  isLoggedIn,
+  isAuthor,
+  validateEvent,
+  validateResult,
+  controller.update
+);
 
 // PUT /events/:id
 // router.put("/:id", validateId, isLoggedIn, isAuthor, upload.single("image"), async (req, res, next) => {
@@ -80,7 +100,6 @@ router.put('/:id', validateId, isLoggedIn, isAuthor, validateEvent, validateResu
 //     const { topic, title, author, description, location, startTime, endTime } =
 //       req.body;
 //     const image = req.file ? "/uploads/" + req.file.filename : "";
-
 
 //     // Find the event by ID and update it
 //     const updatedEvent = await Event.findByIdAndUpdate(
@@ -113,5 +132,7 @@ router.put('/:id', validateId, isLoggedIn, isAuthor, validateEvent, validateResu
 
 // DELETE /events/:id
 router.delete("/:id", validateId, isLoggedIn, isAuthor, controller.delete);
+
+router.post("/:id/rsvp", isLoggedIn, isNotHost, controller.rsvp);
 
 module.exports = router;

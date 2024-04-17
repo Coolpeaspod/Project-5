@@ -39,6 +39,17 @@
         <%= event.description %>
       </p>
     </div>
+    <div class="rsvp">
+      <p>RSVP</p>
+      <form action="/events/<%= event._id %>/rsvp" method="POST">
+        <button type="submit" name="status" value="YES" class="btn btn-success">Yes</button>
+        <button type="submit" name="status" value="NO" class="btn btn-danger">No</button>
+        <button type="submit" name="status" value="MAYBE" class="btn btn-primary">Maybe</button>
+      </form>
+    </div>
+    <p>Number of Attendees: <%= event.attendees.length %>
+    </p>
+
     </div>
   </main>
   <%- include('../partials/footer.ejs') %>

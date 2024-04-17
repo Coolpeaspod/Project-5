@@ -1,6 +1,8 @@
 const model = require("../models/event");
-const flash = require('connect-flash');
+const flash = require("connect-flash");
 const multer = require("multer");
+const rsvp = require("../models/rsvp");
+const Event = require("../models/event");
 
 //const luxon = require('luxon');
 
@@ -50,10 +52,11 @@ exports.create = (req, res, next) => {
     console.log(req.body);
   }
 
-  event.save()
+  event
+    .save()
     .then((event) => {
       console.log(event);
-      req.flash('success', 'Event created successfully');
+      req.flash("success", "Event created successfully");
       res.redirect("/events");
     })
     .catch((err) => {
@@ -74,9 +77,10 @@ exports.show = (req, res, next) => {
   // }
   model
     .findById(id)
+    .populate("attendees")
     .populate("author", "firstName lastName")
     //.lean() //doesnt work here either
-    .then(event => {
+    .then((event) => {
       if (event) {
         console.log(event);
         return res.render("./event/show", { event });
@@ -138,7 +142,7 @@ exports.update = (req, res, next) => {
       if (event) {
         //event.startTime = luxonDateTime;
         //event.image = event.image;
-        req.flash('success', 'Event updated successfully');
+        req.flash("success", "Event updated successfully");
         return res.redirect("/events/" + id);
       }
       // else {
@@ -167,7 +171,7 @@ exports.delete = (req, res, next) => {
     .findByIdAndDelete(id)
     .then((event) => {
       if (event) {
-        req.flash('success', 'Event deleted successfully');
+        req.flash("success", "Event deleted successfully");
         return res.redirect("/events");
       }
       // else {
@@ -177,6 +181,37 @@ exports.delete = (req, res, next) => {
       // }
     })
     .catch((err) => {
+      next(err);
+    });
+};
+
+exports.rsvp = (req, res, next) => {
+  let id = req.params.id;
+  let status = req.body.status;
+  let user = req.session.user;
+  let rsvpObj = { user, event: id, status };
+
+  rsvp
+    .findOneAndUpdate({ user, event: id }, rsvpObj, {
+      upsert: true,
+      runValidators: true,
+      useFindAndModify: false,
+    })
+    .then((rsvpObj) => {
+      return Event.findByIdAndUpdate(
+        id,
+        { $addToSet: { attendees: user } },
+        { new: true }
+      );
+    })
+    .then((updatedEvent) => {
+      req.flash("success", "RSVP updated successfully");
+      return res.redirect("/events/" + id);
+    })
+    .catch((err) => {
+      if (err.name === "ValidationError") {
+        err.status = 400;
+      }
       next(err);
     });
 };
