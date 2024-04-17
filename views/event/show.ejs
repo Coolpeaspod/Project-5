@@ -16,12 +16,25 @@
             </button>
           </form>
           <%}%>
+          
             <div class="eventimg-container">
               <img src="<%= event.image %>" alt="<%= event.title %>" />
             </div>
 
       </div>
     </div>
+    
+    <%if(user != event.author._id){%>
+      <div>
+        <select>
+          <option value="">RSVP</option>
+          <option value="Yes">Yes</option>
+          <option value="No">No</option>
+          <option value="Maybe">Maybe</option>
+        </select>
+      </div>
+    <%}%>
+
     <div class="eventInfo">
 
       <p>Host: <%= event.author.firstName %>
