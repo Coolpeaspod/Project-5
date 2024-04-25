@@ -8,7 +8,6 @@ const MongoStore = require("connect-mongo");
 const flash = require("connect-flash");
 const eventRoutes = require("./routes/eventRoutes");
 const userRoutes = require("./routes/userRoutes");
-const rsvpRoutes = require("./routes/rsvpRoutes");
 
 const { findById } = require("./models/event");
 const uri =
@@ -70,7 +69,7 @@ app.get("/", (req, res) => {
 
 app.use("/events", eventRoutes);
 app.use("/users", userRoutes);
-app.use("/rsvp", rsvpRoutes);
+// app.use("/rsvp", rsvpRoutes);
 
 app.get("/about", (req, res) => {
   res.render("about");
