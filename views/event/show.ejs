@@ -16,12 +16,14 @@
             </button>
           </form>
           <%}%>
+          
             <div class="eventimg-container">
               <img src="<%= event.image %>" alt="<%= event.title %>" />
             </div>
 
       </div>
     </div>
+
     <div class="eventInfo">
 
       <p>Host: <%= event.author.firstName %>
@@ -39,6 +41,7 @@
         <%= event.description %>
       </p>
     </div>
+    <%if(user != event.author._id){%>
     <div class="rsvp">
       <p>RSVP</p>
       <form action="/events/<%= event.id %>/rsvp" method="POST">
@@ -47,6 +50,7 @@
         <button type="submit" name="status" value="MAYBE" class="btn btn-primary">Maybe</button>
       </form>
     </div>
+    <%}%>
     <p>Number of Attendees: <%= event.attendees.length %>
     </p>
 
