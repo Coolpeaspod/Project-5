@@ -3,6 +3,7 @@ const flash = require("connect-flash");
 const multer = require("multer");
 const rsvp = require("../models/rsvp");
 const Event = require("../models/event");
+const mongoose = require("mongoose");
 
 //const luxon = require('luxon');
 
@@ -185,33 +186,39 @@ exports.delete = (req, res, next) => {
     });
 };
 
-exports.rsvp = (req, res, next) => {
-  let id = req.params.id;
-  let status = req.body.status;
-  let user = req.session.user;
-  let rsvpObj = { user, event: id, status };
+exports.rsvp = async (req, res, next) => {
+  try {
+    const eventId = req.params.id;
+    const status = req.body.status;
+    const userId = req.session.user;
 
-  rsvp
-    .findOneAndUpdate({ user, event: id }, rsvpObj, {
-      upsert: true,
-      runValidators: true,
-      useFindAndModify: false,
-    })
-    .then((rsvpObj) => {
-      return Event.findByIdAndUpdate(
-        id,
-        { $addToSet: { attendees: user } },
-        { new: true }
-      );
-    })
-    .then((updatedEvent) => {
-      req.flash("success", "RSVP updated successfully");
-      return res.redirect("/events/" + id);
-    })
-    .catch((err) => {
-      if (err.name === "ValidationError") {
-        err.status = 400;
-      }
-      next(err);
-    });
+    // Check if userId and eventId are valid ObjectIds
+    if (
+      !mongoose.Types.ObjectId.isValid(eventId) ||
+      !mongoose.Types.ObjectId.isValid(userId)
+    ) {
+      throw new Error("Invalid user or event ID");
+    }
+
+    const rsvpObj = { user: userId, event: eventId, status };
+
+    // Create or update the RSVP document
+    const updatedRsvp = await rsvp.findOneAndUpdate(
+      { user: userId, event: eventId },
+      rsvpObj,
+      { upsert: true, new: true }
+    );
+
+    // Update the attendees array in the Event model with the RSVP document ID
+    await Event.findByIdAndUpdate(
+      eventId,
+      { $addToSet: { attendees: updatedRsvp._id } },
+      { new: true }
+    );
+
+    req.flash("success", "RSVP updated successfully");
+    res.redirect("/events/" + eventId);
+  } catch (err) {
+    next(err);
+  }
 };
