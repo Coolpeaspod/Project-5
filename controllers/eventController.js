@@ -1,6 +1,9 @@
 const model = require("../models/event");
-const flash = require('connect-flash');
+const flash = require("connect-flash");
 const multer = require("multer");
+const rsvp = require("../models/rsvp");
+const Event = require("../models/event");
+const mongoose = require("mongoose");
 
 //const luxon = require('luxon');
 
@@ -50,10 +53,11 @@ exports.create = (req, res, next) => {
     console.log(req.body);
   }
 
-  event.save()
+  event
+    .save()
     .then((event) => {
       console.log(event);
-      req.flash('success', 'Event created successfully');
+      req.flash("success", "Event created successfully");
       res.redirect("/events");
     })
     .catch((err) => {
@@ -74,9 +78,10 @@ exports.show = (req, res, next) => {
   // }
   model
     .findById(id)
+    .populate("attendees")
     .populate("author", "firstName lastName")
     //.lean() //doesnt work here either
-    .then(event => {
+    .then((event) => {
       if (event) {
         console.log(event);
         return res.render("./event/show", { event });
@@ -138,7 +143,7 @@ exports.update = (req, res, next) => {
       if (event) {
         //event.startTime = luxonDateTime;
         //event.image = event.image;
-        req.flash('success', 'Event updated successfully');
+        req.flash("success", "Event updated successfully");
         return res.redirect("/events/" + id);
       }
       // else {
@@ -167,7 +172,7 @@ exports.delete = (req, res, next) => {
     .findByIdAndDelete(id)
     .then((event) => {
       if (event) {
-        req.flash('success', 'Event deleted successfully');
+        req.flash("success", "Event deleted successfully");
         return res.redirect("/events");
       }
       // else {
@@ -179,4 +184,41 @@ exports.delete = (req, res, next) => {
     .catch((err) => {
       next(err);
     });
+};
+
+exports.rsvp = async (req, res, next) => {
+  try {
+    const eventId = req.params.id;
+    const status = req.body.status;
+    const userId = req.session.user;
+
+    // Check if userId and eventId are valid ObjectIds
+    if (
+      !mongoose.Types.ObjectId.isValid(eventId) ||
+      !mongoose.Types.ObjectId.isValid(userId)
+    ) {
+      throw new Error("Invalid user or event ID");
+    }
+
+    const rsvpObj = { user: userId, event: eventId, status };
+
+    // Create or update the RSVP document
+    const updatedRsvp = await rsvp.findOneAndUpdate(
+      { user: userId, event: eventId },
+      rsvpObj,
+      { upsert: true, new: true }
+    );
+
+    // Update the attendees array in the Event model with the RSVP document ID
+    await Event.findByIdAndUpdate(
+      eventId,
+      { $addToSet: { attendees: updatedRsvp._id } },
+      { new: true }
+    );
+
+    req.flash("success", "RSVP updated successfully");
+    res.redirect("/events/" + eventId);
+  } catch (err) {
+    next(err);
+  }
 };
