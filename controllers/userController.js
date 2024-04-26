@@ -1,5 +1,7 @@
 const model = require("../models/user");
 const Event = require("../models/event");
+const rsvp = require("../models/rsvp");
+const { connection } = require("mongoose");
 
 exports.new = (req, res) => {
   return res.render("./user/new");
@@ -54,17 +56,50 @@ exports.login = (req, res, next) => {
     })
     .catch((err) => next(err));
 };
+// exports.profile = async (req, res, next) => {
+//   try {
+//     const userId = req.session.user;
 
+//     // Fetch user's data
+//     const user = await model.findById(userId);
+
+//     // Fetch events created by the user
+//     // const userEvents = await Event.find({ author: userId }).populate({
+//     //   path: "attendees",
+//     //   populate: { path: "user", model: "User" }, // Populate the user details for each RSVP
+//     // });
+//     rsvp
+//       .find({ user: userId })
+//       .populate("event", "title, topic")
+//       .then((rsvps) => {
+//         let userEvents = rsvps.map((rsvp) => rsvp.event);
+//         res.render("./user/profile", { user, rsvps });
+//       });
+
+//     // Render the profile page with user's data and events
+//     // res.render("./user/profile", { user, events: userEvents });
+//   } catch (err) {
+//     console.error("Error in profile controller:", err);
+//     res.status(500).send("Internal Server Error");
+//   }
+// };
 exports.profile = (req, res, next) => {
-  let id = req.session.user;
-  Promise.all([model.findById(id), Event.find({ author: id })])
-    .then((results) => {
-      const [user, events] = results;
-      console.log(events);
-      res.render("./user/profile", { user, events });
-    })
+  const userId = req.session.user;
 
-    .catch((err) => next(err));
+  Promise.all([
+    model.findById(userId), // Fetch user's data
+    Event.find({ author: userId }), // Fetch events created by the user
+    rsvp.find({ user: userId }).populate("event"), // Fetch RSVPs for events the user has RSVP'd for
+  ])
+    .then((results) => {
+      const [user, events, rsvps] = results;
+
+      res.render("./user/profile", { user, events, rsvps });
+    })
+    .catch((err) => {
+      console.error("Error in profile controller:", err);
+      res.status(500).send("Internal Server Error");
+    });
 };
 
 exports.logout = (req, res, next) => {

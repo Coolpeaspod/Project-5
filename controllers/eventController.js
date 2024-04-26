@@ -163,62 +163,91 @@ exports.update = (req, res, next) => {
 //DELETE /events/:id
 exports.delete = (req, res, next) => {
   let id = req.params.id;
-  // if (!id.match(/^[0-9a-fA-F]{24}$/)) {
-  //   let err = new Error("Invalid event id");
-  //   err.status = 400;
-  //   return next(err);
-  // }
+
+  // First, find the event to be deleted
   model
-    .findByIdAndDelete(id)
+    .findById(id)
     .then((event) => {
-      if (event) {
-        req.flash("success", "Event deleted successfully");
+      if (!event) {
+        // If event does not exist, return error or handle accordingly
+        req.flash("error", "Event not found");
         return res.redirect("/events");
       }
-      // else {
-      //   let err = Error("Cannot find event with id " + id);
-      //   err.status = 404;
-      //   next(err);
-      // }
+
+      // Delete all associated RSVPs
+      return rsvp.deleteMany({ event: event._id }).then(() => {
+        // Once RSVPs are deleted, delete the event itself
+        return model.findByIdAndDelete(id);
+      });
+    })
+    .then(() => {
+      // After successful deletion, redirect to events page with success message
+      req.flash("success", "Event and associated RSVPs deleted successfully");
+      return res.redirect("/events");
     })
     .catch((err) => {
+      // Handle errors
       next(err);
     });
 };
 
-exports.rsvp = async (req, res, next) => {
-  try {
-    const eventId = req.params.id;
-    const status = req.body.status;
-    const userId = req.session.user;
+exports.rsvp = (req, res, next) => {
+  const eventId = req.params.id;
+  const status = req.body.status;
+  const userId = req.session.user;
 
-    // Check if userId and eventId are valid ObjectIds
-    // if (
-    //   !mongoose.Types.ObjectId.isValid(eventId) ||
-    //   !mongoose.Types.ObjectId.isValid(userId)
-    // ) {
-    //   throw new Error("Invalid user or event ID");
-    // }
+  console.log("Event ID:", eventId);
+  console.log("Status:", status);
+  console.log("User ID:", userId);
 
-    const rsvpObj = { user: userId, event: eventId, status };
-
-    // Create or update the RSVP document
-    const updatedRsvp = await rsvp.findOneAndUpdate(
-      { user: userId, event: eventId },
-      rsvpObj,
-      { upsert: true, new: true }
-    );
-
-    // Update the attendees array in the Event model with the RSVP document ID
-    await Event.findByIdAndUpdate(
-      eventId,
-      { $addToSet: { attendees: updatedRsvp._id } },
-      { new: true }
-    );
-
-    req.flash("success", "RSVP updated successfully");
-    res.redirect("/events/" + eventId);
-  } catch (err) {
-    next(err);
+  if (
+    !mongoose.Types.ObjectId.isValid(eventId) ||
+    !mongoose.Types.ObjectId.isValid(userId)
+  ) {
+    console.log("Invalid user or event ID");
+    return res.status(400).send("Invalid user or event ID");
   }
+
+  // Create or update the RSVP document
+  rsvp
+    .findOneAndUpdate(
+      { user: userId, event: eventId },
+      { user: userId, event: eventId, status: status },
+      { upsert: true, new: true, runValidators: true }
+    )
+    .then(() => {
+      // Fetch the event after updating the RSVP
+      return Event.findById(eventId);
+    })
+    .then((event) => {
+      console.log("Event:", event);
+
+      // Get the current number of attendees
+      let numAttendees = event.attendees.length;
+
+      console.log("Current Number of Attendees:", numAttendees);
+
+      // Increment or decrement the number of attendees based on the RSVP status
+      if (status === "YES") {
+        numAttendees++; // Increment if user RSVP'd Yes
+      } else if (status === "NO") {
+        numAttendees--; // Decrement if user RSVP'd No
+      }
+
+      console.log("Updated Number of Attendees:", numAttendees);
+
+      // Update the number of attendees in the event model
+      event.attendeeCount = numAttendees;
+
+      // Save the updated event
+      return event.save();
+    })
+    .then(() => {
+      req.flash("success", "RSVP updated successfully");
+      res.redirect("/users/profile");
+    })
+    .catch((err) => {
+      console.error("Error:", err);
+      next(err);
+    });
 };
