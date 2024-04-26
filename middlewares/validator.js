@@ -94,3 +94,9 @@ exports.validateResult = (req, res, next) => {
     return next();
   }
 };
+exports.validateRsvp = [
+  body("status", "Invalid status.")
+    .isIn(["YES", "NO", "MAYBE"])
+    .trim()
+    .escape(),
+];
