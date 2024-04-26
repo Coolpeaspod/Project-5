@@ -4,7 +4,12 @@ const Event = require("../models/event"); // Import the Event model
 const multer = require("multer");
 const mongoose = require("mongoose");
 const { isLoggedIn, isAuthor, isNotHost } = require("../middlewares/auth");
-const { validateId, validateEvent, validateResult } = require("../middlewares/validator");
+const {
+  validateId,
+  validateEvent,
+  validateResult,
+  validateRsvp,
+} = require("../middlewares/validator");
 const rsvp = require("../models/rsvp");
 
 const router = express.Router();
@@ -129,6 +134,13 @@ router.put(
 // DELETE /events/:id
 router.delete("/:id", validateId, isLoggedIn, isAuthor, controller.delete);
 
-router.post("/:id/rsvp", validateId, isLoggedIn, isNotHost, controller.rsvp);
+router.post(
+  "/:id/rsvp",
+  validateId,
+  isLoggedIn,
+  isNotHost,
+  validateRsvp,
+  controller.rsvp
+);
 
 module.exports = router;
