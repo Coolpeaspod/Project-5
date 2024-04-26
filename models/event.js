@@ -42,6 +42,9 @@ const eventSchema = new Schema(
     //   required: true,
     // },
     attendees: [{ type: Schema.Types.ObjectId, ref: "rsvp" }],
+    attendeeCount: {
+      type: Number
+    }
   },
   { timestamps: true }
 );
