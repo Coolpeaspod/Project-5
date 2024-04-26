@@ -186,39 +186,63 @@ exports.delete = (req, res, next) => {
     });
 };
 
-exports.rsvp = async (req, res, next) => {
-  try {
-    const eventId = req.params.id;
-    const status = req.body.status;
-    const userId = req.session.user;
+exports.rsvp = (req, res, next) => {
+  const eventId = req.params.id;
+  const status = req.body.status;
+  const userId = req.session.user;
 
-    // Check if userId and eventId are valid ObjectIds
-    if (
-      !mongoose.Types.ObjectId.isValid(eventId) ||
-      !mongoose.Types.ObjectId.isValid(userId)
-    ) {
-      throw new Error("Invalid user or event ID");
-    }
+  console.log("Event ID:", eventId);
+  console.log("Status:", status);
+  console.log("User ID:", userId);
 
-    const rsvpObj = { user: userId, event: eventId, status };
-
-    // Create or update the RSVP document
-    const updatedRsvp = await rsvp.findOneAndUpdate(
-      { user: userId, event: eventId },
-      rsvpObj,
-      { upsert: true, new: true }
-    );
-
-    // Update the attendees array in the Event model with the RSVP document ID
-    await Event.findByIdAndUpdate(
-      eventId,
-      { $addToSet: { attendees: updatedRsvp._id } },
-      { new: true }
-    );
-
-    req.flash("success", "RSVP updated successfully");
-    res.redirect("/events/" + eventId);
-  } catch (err) {
-    next(err);
+  if (
+    !mongoose.Types.ObjectId.isValid(eventId) ||
+    !mongoose.Types.ObjectId.isValid(userId)
+  ) {
+    console.log("Invalid user or event ID");
+    return res.status(400).send("Invalid user or event ID");
   }
+
+  // Create or update the RSVP document
+  rsvp
+    .findOneAndUpdate(
+      { user: userId, event: eventId },
+      { user: userId, event: eventId, status: status },
+      { upsert: true, new: true, runValidators: true }
+    )
+    .then(() => {
+      // Fetch the event after updating the RSVP
+      return Event.findById(eventId);
+    })
+    .then((event) => {
+      console.log("Event:", event);
+
+      // Get the current number of attendees
+      let numAttendees = event.attendees.length;
+
+      console.log("Current Number of Attendees:", numAttendees);
+
+      // Increment or decrement the number of attendees based on the RSVP status
+      if (status === "YES") {
+        numAttendees++; // Increment if user RSVP'd Yes
+      } else if (status === "NO") {
+        numAttendees--; // Decrement if user RSVP'd No
+      }
+
+      console.log("Updated Number of Attendees:", numAttendees);
+
+      // Update the number of attendees in the event model
+      event.attendeeCount = numAttendees;
+
+      // Save the updated event
+      return event.save();
+    })
+    .then(() => {
+      req.flash("success", "RSVP updated successfully");
+      res.redirect("/users/profile");
+    })
+    .catch((err) => {
+      console.error("Error:", err);
+      next(err);
+    });
 };
