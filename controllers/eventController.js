@@ -193,12 +193,12 @@ exports.rsvp = async (req, res, next) => {
     const userId = req.session.user;
 
     // Check if userId and eventId are valid ObjectIds
-    if (
-      !mongoose.Types.ObjectId.isValid(eventId) ||
-      !mongoose.Types.ObjectId.isValid(userId)
-    ) {
-      throw new Error("Invalid user or event ID");
-    }
+    // if (
+    //   !mongoose.Types.ObjectId.isValid(eventId) ||
+    //   !mongoose.Types.ObjectId.isValid(userId)
+    // ) {
+    //   throw new Error("Invalid user or event ID");
+    // }
 
     const rsvpObj = { user: userId, event: eventId, status };
 
