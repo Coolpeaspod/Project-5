@@ -41,14 +41,20 @@
         <%= event.description %>
       </p>
     </div>
-    <%if(user !=event.author._id){%>
-      <div class="rsvp">
-        <p>RSVP</p>
-        <form action="/events/<%= event._id %>/rsvp" method="POST">
-          <button type="submit" name="status" value="YES" class="btn btn-success">Yes</button>
-          <button type="submit" name="status" value="NO" class="btn btn-danger">No</button>
-          <button type="submit" name="status" value="MAYBE" class="btn btn-primary">Maybe</button>
-        </form>
+
+    <%if(user != event.author._id){%>
+    <div class="rsvp">
+      <p>RSVP</p>
+      <form action="/events/<%= event.id %>/rsvp" method="POST">
+        <button type="submit" name="status" value="YES" class="btn btn-success">Yes</button>
+        <button type="submit" name="status" value="NO" class="btn btn-danger">No</button>
+        <button type="submit" name="status" value="MAYBE" class="btn btn-primary">Maybe</button>
+      </form>
+    </div>
+    <%}%>
+    <p>Number of Attendees: <%= event.attendeeCount %> 
+    </p>
+
 
       </div>
       <%}%>
