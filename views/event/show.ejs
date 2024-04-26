@@ -16,7 +16,7 @@
             </button>
           </form>
           <%}%>
-          
+
             <div class="eventimg-container">
               <img src="<%= event.image %>" alt="<%= event.title %>" />
             </div>
@@ -41,6 +41,7 @@
         <%= event.description %>
       </p>
     </div>
+
     <%if(user != event.author._id){%>
     <div class="rsvp">
       <p>RSVP</p>
@@ -54,6 +55,14 @@
     <p>Number of Attendees: <%= event.attendeeCount %> 
     </p>
 
-    </div>
+
+      </div>
+      <%}%>
+        <p>Number of Attendees: <%= event.attendeeCount %>
+        </p>
+
+
+
+        </div>
   </main>
   <%- include('../partials/footer.ejs') %>
