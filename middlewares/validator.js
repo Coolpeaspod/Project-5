@@ -48,23 +48,31 @@ exports.validateEvent = [
     .trim()
     .escape(),
   body("location", "Location cannot be empty.").notEmpty().trim().escape(),
-  body("startTime", "Start time cannot be empty.").notEmpty().trim().escape().custom(value => {
-    const startTime = luxon.DateTime.fromISO(value);
-    startTimeGlobal = startTime;
-    const now = luxon.DateTime.now();
-    if (startTime <= now) {
-      throw new Error("Start time must be in future.");
-    }
-    return true;
-  }),
+  body("startTime", "Start time cannot be empty.")
+    .notEmpty()
+    .trim()
+    .escape()
+    .custom((value) => {
+      const startTime = luxon.DateTime.fromISO(value);
+      startTimeGlobal = startTime;
+      const now = luxon.DateTime.now();
+      if (startTime <= now) {
+        throw new Error("Start time must be in future.");
+      }
+      return true;
+    }),
 
-  body("endTime", "End time cannot be empty.").notEmpty().trim().escape().custom(value => {
-    const endTime = luxon.DateTime.fromISO(value);
-    if (endTime <= startTimeGlobal) {
-      throw new Error("End time has to be after start time");
-    }
-    return true;
-  }),
+  body("endTime", "End time cannot be empty.")
+    .notEmpty()
+    .trim()
+    .escape()
+    .custom((value) => {
+      const endTime = luxon.DateTime.fromISO(value);
+      if (endTime <= startTimeGlobal) {
+        throw new Error("End time has to be after start time");
+      }
+      return true;
+    }),
   body("topic", "Invalid topic.").isIn([
     "Education",
     "Fun",

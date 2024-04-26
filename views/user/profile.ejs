@@ -9,9 +9,9 @@
         <h3>Events RSVP'd</h3>
         <% rsvps.forEach(rsvp=> { %>
           <div class="event-container mb-3 d-flex justify-content-between align-items-center">
-            <a href="/events/<%= rsvp.event._id %>">
+            <a href="<%- rsvp.event ? '/events/' + rsvp.event._id : '#' %>">
               <p class="mb-0">
-                <%= rsvp.event.title %>
+                <%= rsvp.event ? rsvp.event.title : 'Event Not Found' %>
               </p>
             </a>
             <div class="d-flex align-items-center">
@@ -53,6 +53,5 @@
               <p>You have not created any events</p>
               <% } %>
   </main>
-
 
   <%- include('../partials/footer.ejs') %>
