@@ -163,25 +163,30 @@ exports.update = (req, res, next) => {
 //DELETE /events/:id
 exports.delete = (req, res, next) => {
   let id = req.params.id;
-  // if (!id.match(/^[0-9a-fA-F]{24}$/)) {
-  //   let err = new Error("Invalid event id");
-  //   err.status = 400;
-  //   return next(err);
-  // }
+
+  // First, find the event to be deleted
   model
-    .findByIdAndDelete(id)
+    .findById(id)
     .then((event) => {
-      if (event) {
-        req.flash("success", "Event deleted successfully");
+      if (!event) {
+        // If event does not exist, return error or handle accordingly
+        req.flash("error", "Event not found");
         return res.redirect("/events");
       }
-      // else {
-      //   let err = Error("Cannot find event with id " + id);
-      //   err.status = 404;
-      //   next(err);
-      // }
+
+      // Delete all associated RSVPs
+      return rsvp.deleteMany({ event: event._id }).then(() => {
+        // Once RSVPs are deleted, delete the event itself
+        return model.findByIdAndDelete(id);
+      });
+    })
+    .then(() => {
+      // After successful deletion, redirect to events page with success message
+      req.flash("success", "Event and associated RSVPs deleted successfully");
+      return res.redirect("/events");
     })
     .catch((err) => {
+      // Handle errors
       next(err);
     });
 };
